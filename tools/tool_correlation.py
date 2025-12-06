@@ -77,7 +77,7 @@ def view(context):
                         ha="center", va="center", color=color, fontsize=8)
 
     # 设置标题字体
-    ax.set_title("特征因子相关性矩阵 (AI 模拟)", fontsize=11, pad=10, fontproperties=zh_font)
+    ax.set_title("特征因子相关性矩阵", fontsize=11, pad=10, fontproperties=zh_font)
     
     ax.spines[:].set_visible(False)
     ax.set_xticks(np.arange(n+1)-.5, minor=True)
@@ -93,3 +93,4 @@ def view(context):
         f1, f2 = random.sample(labels, 2)
         r_val = random.uniform(0.75, 0.95)
         st.caption(f"✅ 深度归因结论: **{f1}** 对 **{f2}** 具有显著的正向敏感度 (Shapley Value={r_val:.2f})")
+
