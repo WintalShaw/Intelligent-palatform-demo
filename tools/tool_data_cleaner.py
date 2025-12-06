@@ -4,7 +4,7 @@ import time
 import random
 
 def run(context):
-    time.sleep(0.8) # 假装耗时
+    time.sleep(1.5) # 假装耗时
     return "清洗完成"
 
 def view(context):
@@ -27,3 +27,4 @@ def view(context):
     
     # (可选) 加一个更直观的进度条展示质量
     # st.progress(int(quality_score), text="质量健康度")
+
