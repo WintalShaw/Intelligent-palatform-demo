@@ -1,0 +1,17 @@
+{
+    "mr.gong": {
+        "password": "123456",
+        "role": "admin",
+        "model_path": "/root/admin/"
+    },
+    "user": {
+        "password": "123",
+        "role": "user",
+        "model_path": "/usr/local/user/"
+    },
+    "upc01": {
+        "password": "123456",
+        "role": "user",
+        "model_path": "/usr/local/ai_models/upc01/"
+    }
+}
