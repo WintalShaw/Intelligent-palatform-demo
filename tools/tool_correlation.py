@@ -1,25 +1,28 @@
-# tools/tool_correlation.py
 import streamlit as st
 import time
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import platform # 新增：用于判断操作系统
+import platform 
+import matplotlib.font_manager as fm
 
-# --- 核心修复：更强健的字体设置逻辑 ---
+
 system_name = platform.system()
+
 if system_name == "Windows":
-    # Windows 优先使用 微软雅黑，其次是黑体、宋体
-    plt.rcParams['font.sans-serif'] = ['Microsoft YaHei', 'SimHei', 'SimSun', 'Arial']
+    # 本地开发 (Windows)
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'SimSun']
 elif system_name == "Darwin":
-    # Mac 系统优先使用 Arial Unicode MS
+    # 本地开发 (Mac)
     plt.rcParams['font.sans-serif'] = ['Arial Unicode MS', 'PingFang SC']
 else:
-    # Linux 系统
-    plt.rcParams['font.sans-serif'] = ['WenQuanYi Micro Hei', 'Droid Sans Fallback']
+    # 线上部署 (Linux / Streamlit Cloud)
+    # 这里的名字必须和 packages.txt 安装的字体内部名一致
+    plt.rcParams['font.sans-serif'] = ['WenQuanYi Micro Hei', 'Noto Sans CJK SC', 'DejaVu Sans']
 
-# 解决负号显示为方块的问题
+# 解决负号显示问题
 plt.rcParams['axes.unicode_minus'] = False
+# =======================================================
 
 def run(context):
     time.sleep(0.8)  # 假装在计算
@@ -35,9 +38,9 @@ def view(context):
     # 获取 CSV 里的数值列名
     if df is not None:
         numeric_cols = [c for c in df.columns if 'date' not in c.lower() and '时间' not in c]
-        base_labels = numeric_cols[:3] # 最多取前3个真实的
+        base_labels = numeric_cols[:3] 
 
-    # 油田专业术语库 (用来凑数的)
+    # 油田专业术语库
     fake_terms = ['动液面', '含水率', '泵效', '孔隙度', '渗透率', '注采比', '地层压力']
     
     # 凑够 5 个特征
