@@ -190,33 +190,6 @@ def render_login_page():
 # ==========================================
 def render_sidebar():
     with st.sidebar:
-        if st.session_state.role == 'user':
-            reports = load_data(REPORT_DB_FILE)
-            # 筛选：当前用户 + 状态是 rejected
-            rejected_list = [r for r in reports if
-                             r['submitter'] == st.session_state.username and r.get('status') == 'rejected']
-
-            if rejected_list:
-                st.error(f"🔔 您有 {len(rejected_list)} 条驳回通知")
-                with st.expander("查看驳回详情", expanded=True):
-                    for r in rejected_list:
-                        st.markdown(f"""
-                                <div class="notification-box">
-                                    <small>任务: {r['task_name']}</small><br>
-                                    <strong>❌ 意见: {r.get('feedback', '无')}</strong>
-                                </div>
-                                """, unsafe_allow_html=True)
-
-                    # 只有点击这个按钮，才把这些驳回的消息清除（归档或物理删除，这里为了演示直接物理删除）
-                    if st.button("我知道了 (清除通知)", key="cls_msg", use_container_width=True):
-                        # 逻辑：保留那些【不是(当前用户且被驳回)】的报告
-                        new_reports = [
-                            x for x in reports
-                            if not (x['submitter'] == st.session_state.username and x.get('status') == 'rejected')
-                        ]
-                        save_data(REPORT_DB_FILE, new_reports)
-                        st.rerun()
-                st.divider()
         st.title("🛢️ AI 指挥官 Ent")
 
         # --- 用户信息 ---
@@ -230,53 +203,67 @@ def render_sidebar():
         # --- 消息通知区域 (仅普通用户) ---
         if st.session_state.role == 'user':
             reports = load_data(REPORT_DB_FILE)
-            rejected = [r for r in reports if r['submitter'] == st.session_state.username and r['status'] == 'rejected']
+            # 筛选：当前用户 + 状态是 rejected
+            rejected_list = [r for r in reports if
+                             r['submitter'] == st.session_state.username and r.get('status') == 'rejected']
 
-            if rejected:
+            if rejected_list:
                 st.divider()
-                st.markdown("### 🔔 消息通知")
-                for r in rejected:
+                st.error(f"🔔 您有 {len(rejected_list)} 条驳回通知")
+                
+                # 遍历显示驳回详情
+                for r in rejected_list:
                     st.markdown(f"""
                     <div class="notification-box">
-                        <strong>❌ 审批驳回</strong><br>
                         <small>任务: {r['task_name']}</small><br>
-                        <small>意见: {r['feedback']}</small>
+                        <strong>❌ 意见: {r.get('feedback', '无')}</strong>
                     </div>
                     """, unsafe_allow_html=True)
-                if st.button("清除通知"):
-                    st.toast("通知已标记为已读")
 
-        st.divider()
+                # 清除按钮
+                if st.button("我知道了 (清除通知)", key="cls_msg", use_container_width=True):
+                    # 逻辑：保留那些【不是(当前用户且被驳回)】的报告
+                    new_reports = [
+                        x for x in reports
+                        if not (x['submitter'] == st.session_state.username and x.get('status') == 'rejected')
+                    ]
+                    save_data(REPORT_DB_FILE, new_reports)
+                    st.rerun()
+            else:
+                st.divider()
+                st.caption("暂无新消息")
 
-        # --- 导航 ---
+        # --- 导航菜单 ---
         if st.session_state.role == 'user':
             st.markdown("### 🧭 导航菜单")
+            
+            # 按钮：生产分析
             if st.button("📊 生产分析", use_container_width=True,
                          type="primary" if st.session_state.current_page == "analysis" else "secondary"):
                 st.session_state.current_page = "analysis"
                 st.rerun()
+                
+            # 按钮：参数微调
             if st.button("🔧 参数微调", use_container_width=True,
                          type="primary" if st.session_state.current_page == "training" else "secondary"):
                 st.session_state.current_page = "training"
                 st.rerun()
 
+            # 额外功能：重置工作台 (仅在分析页显示)
             if st.session_state.current_page == "analysis":
                 st.write("")  # 增加一点空行
                 if st.button("🗑️ 重置/清空工作台", use_container_width=True):
-                    # 1. 清空工作流列表
                     st.session_state.workflow = []
-                    # 2. 清空上下文数据
                     st.session_state.context = {}
-                    # 3. 清除防止重复提交的标记 (如果有的话)
+                    # 清除防重复提交标记
                     keys_to_del = [k for k in st.session_state.keys() if k.startswith("submitted_")]
                     for k in keys_to_del:
                         del st.session_state[k]
-
                     st.toast("工作台已重置")
                     time.sleep(0.5)
                     st.rerun()
 
-            # --- 【加回】工具库展示 ---
+            # --- 工具库展示 ---
             st.divider()
             st.markdown("### 🧰 已激活工具")
             for tid, meta in TOOL_META.items():
@@ -440,8 +427,9 @@ def render_training_page():
         # 找到对应的模型ID
         model_info = next(item for item in MODELS_LIST if item["name"] == selected_model)
 
-        st.info(f"上次更新时间: {model_info['last_update']}")
-        st.warning("提示: 更新参数将触发热加载，不影响当前生产任务。")
+        with st.container(border=True):
+            st.info(f"上次更新: {model_info['last_update']}")
+            st.warning("⚠️ 提示: 更新参数将触发热加载，请避开生产高峰期。")
 
     # 右侧：上传与更新面板
     with col_detail:
@@ -648,3 +636,4 @@ if __name__ == "__main__":
                 render_analysis_page()
             elif st.session_state.current_page == "training":
                 render_training_page()
+
