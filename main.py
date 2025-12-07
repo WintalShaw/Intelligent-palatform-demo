@@ -1,4 +1,3 @@
-
 import streamlit as st
 import importlib
 import time
@@ -422,6 +421,69 @@ def render_manager_page():
                     time.sleep(0.5)
                     st.rerun()
 
+
+def render_training_page():
+    st.title("🔧 工具参数更新与微调中心")
+    st.caption(f"当前工作空间: {st.session_state.username}@cluster-08")
+
+    col_list, col_detail = st.columns([1, 2])
+
+    # 左侧：选择模型
+    with col_list:
+        st.subheader("🛠️ 已部署模型库")
+        selected_model = st.radio(
+            "选择要更新的工具/模型:",
+            [m["name"] for m in MODELS_LIST],
+            label_visibility="collapsed"
+        )
+
+        # 找到对应的模型ID
+        model_info = next(item for item in MODELS_LIST if item["name"] == selected_model)
+
+        st.info(f"上次更新时间: {model_info['last_update']}")
+        st.warning("提示: 更新参数将触发热加载，不影响当前生产任务。")
+
+    # 右侧：上传与更新面板
+    with col_detail:
+        with st.container(border=True):
+            st.subheader(f"🚀 更新向导: {selected_model}")
+
+            # 步骤 1: 上传
+            st.markdown("**Step 1: 上传增量训练数据 (CSV)**")
+            uploaded_file = st.file_uploader("拖拽文件到此处", type=["csv"])
+
+            # 步骤 2: 验证与更新
+            if uploaded_file is not None:
+                st.success(f"✅ 文件已校验: {uploaded_file.name} (12.8 MB)")
+
+                st.markdown("**Step 2: 执行参数更新**")
+
+                # 更新按钮
+                if st.button("⚡ 开始微调 (Fine-tuning)", type="primary"):
+                    progress_text = "任务初始化中..."
+                    my_bar = st.progress(0, text=progress_text)
+
+                    # --- 模拟训练过程 ---
+                    steps = [
+                        ("正在读取 CSV 数据...", 0.5),
+                        ("数据清洗与归一化...", 1.0),
+                        (f"加载用户 {st.session_state.username} 的私有权重...", 1.0),
+                        ("启动反向传播 (Epoch 1/5)...", 1.5),
+                        ("启动反向传播 (Epoch 5/5)...", 1.5),
+                        ("验证集评估 (Accuracy: 98.2%)...", 1.0),
+                        ("参数序列化与热部署...", 1.0)
+                    ]
+
+                    total_steps = len(steps)
+                    for i, (msg, sleep_time) in enumerate(steps):
+                        # 进度条逻辑
+                        percent = int(((i) / total_steps) * 100)
+                        my_bar.progress(percent, text=f"🔄 {msg}")
+                        time.sleep(sleep_time)
+
+                    my_bar.progress(100, text="✅ 更新完成")
+                    st.balloons()
+                    st.success(f"🎉 模型 `{selected_model}` 参数已更新至版本 V{random.randint(3, 9)}.0！")
 # ==========================================
 # 5. 页面：普通用户分析页 (集成提交逻辑)
 # ==========================================
